@@ -21,8 +21,10 @@ import android.view.View
  * @param orientation Whether the views will be layouted and scrolled in vertical or horizontal
  * @param spans How many spans does the layout have per row or column
  */
-open class SpannedGridLayoutManager(val orientation: Orientation,
-                               val spans: Int) : RecyclerView.LayoutManager() {
+open class SpannedGridLayoutManager(
+        val orientation: Orientation,
+        _spans: Int
+) : RecyclerView.LayoutManager() {
 
     //==============================================================================================
     //  ~ Orientation & Direction enums
@@ -54,6 +56,21 @@ open class SpannedGridLayoutManager(val orientation: Orientation,
      * Current scroll amount
      */
     protected var scroll = 0
+
+    var spanCount: Int = _spans
+        set(value) {
+            if (field == value) {
+                return
+            }
+
+            field = value
+            require(spanCount >= 1) {
+                ("Span count should be at least 1. Provided "
+                        + spanCount)
+            }
+            spanSizeLookup?.invalidateCache()
+            requestLayout()
+        }
 
     /**
      * Helper get free rects to place views
@@ -159,7 +176,7 @@ open class SpannedGridLayoutManager(val orientation: Orientation,
         protected open fun getDefaultSpanSize(): SpanSize {
             return SpanSize(1, 1)
         }
-        
+
         fun invalidateCache() {
             cache.clear()
         }
@@ -170,8 +187,8 @@ open class SpannedGridLayoutManager(val orientation: Orientation,
     //==============================================================================================
 
     init {
-        if (spans < 1) {
-            throw InvalidMaxSpansException(spans)
+        if (_spans < 1) {
+            throw InvalidMaxSpansException(_spans)
         }
     }
 
@@ -224,7 +241,7 @@ open class SpannedGridLayoutManager(val orientation: Orientation,
 
         // Restore scroll position based on first visible view
         val pendingScrollToPosition = pendingScrollToPosition
-        if (itemCount != 0 && pendingScrollToPosition != null && pendingScrollToPosition >= spans) {
+        if (itemCount != 0 && pendingScrollToPosition != null && pendingScrollToPosition >= spanCount) {
 
             val currentRow = rectsHelper.rows.filter { (_, value) -> value.contains(pendingScrollToPosition) }.keys.firstOrNull()
 
@@ -270,8 +287,8 @@ open class SpannedGridLayoutManager(val orientation: Orientation,
 
         val usedSpan = if (orientation == Orientation.HORIZONTAL) spanSize.height else spanSize.width
 
-        if (usedSpan > this.spans || usedSpan < 1) {
-            throw InvalidSpanSizeException(errorSize = usedSpan, maxSpanSize = spans)
+        if (usedSpan > this.spanCount || usedSpan < 1) {
+            throw InvalidSpanSizeException(errorSize = usedSpan, maxSpanSize = spanCount)
         }
 
         // This rect contains just the row and column number - i.e.: [0, 0, 1, 1]
@@ -543,7 +560,7 @@ open class SpannedGridLayoutManager(val orientation: Orientation,
         }
 
         // Correct scroll if it would make the layout scroll out of bounds at the end
-        if (scroll + size > end && (firstVisiblePosition + childCount + spans) >= state.itemCount) {
+        if (scroll + size > end && (firstVisiblePosition + childCount + spanCount) >= state.itemCount) {
             correctedDistance -= (end - scroll - size)
             scroll = end - size
         }
@@ -846,7 +863,7 @@ open class RectsHelper(val layoutManager: SpannedGridLayoutManager,
     /**
      * Space occupied by each span
      */
-    val itemSize: Int get() = size / layoutManager.spans
+    val itemSize: Int get() = size / layoutManager.spanCount
 
     /**
      * Start row/column for free rects
@@ -873,9 +890,9 @@ open class RectsHelper(val layoutManager: SpannedGridLayoutManager,
     init {
         // There will always be a free rect that goes to Int.MAX_VALUE
         val initialFreeRect = if (orientation == SpannedGridLayoutManager.Orientation.VERTICAL) {
-            Rect(0, 0, layoutManager.spans, Int.MAX_VALUE)
+            Rect(0, 0, layoutManager.spanCount, Int.MAX_VALUE)
         } else {
-            Rect(0, 0, Int.MAX_VALUE, layoutManager.spans)
+            Rect(0, 0, Int.MAX_VALUE, layoutManager.spanCount)
         }
         freeRects.add(initialFreeRect)
     }
