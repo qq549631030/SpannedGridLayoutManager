@@ -1,14 +1,14 @@
 package com.arasthel.spannedgridlayoutmanager.sample
 
 import android.graphics.Color
-import android.support.v7.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView
 import android.view.View
 import android.view.ViewGroup
 
 /**
  * Created by Jorge Martín on 24/5/17.
  */
-class GridItemAdapter: RecyclerView.Adapter<GridItemViewHolder>() {
+class GridItemAdapter: androidx.recyclerview.widget.RecyclerView.Adapter<GridItemViewHolder>() {
 
     val clickedItems: MutableList<Boolean>
 
@@ -51,4 +51,4 @@ class GridItemAdapter: RecyclerView.Adapter<GridItemViewHolder>() {
     }
 }
 
-class GridItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
+class GridItemViewHolder(itemView: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView)

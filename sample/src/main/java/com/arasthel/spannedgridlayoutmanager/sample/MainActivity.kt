@@ -1,7 +1,7 @@
 package com.arasthel.spannedgridlayoutmanager.sample
 
 import android.os.Bundle
-import android.support.v7.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView
 import com.arasthel.spannedgridlayoutmanager.SpanSize
 import com.arasthel.spannedgridlayoutmanager.SpannedGridLayoutManager
 import com.arasthel.spannedgridlayoutmanager.SpannedGridLayoutManager.Orientation.*
@@ -9,9 +9,9 @@ import com.arasthel.spannedgridlayoutmanager.SpannedGridLayoutManager.Orientatio
 /**
  * Created by Jorge Martín on 24/5/17.
  */
-class MainActivity: android.support.v7.app.AppCompatActivity() {
+class MainActivity: androidx.appcompat.app.AppCompatActivity() {
 
-    val recyclerview: RecyclerView by lazy { findViewById<RecyclerView>(R.id.recyclerView) }
+    val recyclerview: androidx.recyclerview.widget.RecyclerView by lazy { findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.recyclerView) }
 
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
