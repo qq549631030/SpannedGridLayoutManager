@@ -324,8 +324,12 @@ open class SpannedGridLayoutManager(
         // Restore scroll position based on first visible view
         val pendingScrollToPosition = pendingScrollToPosition
         if (itemCount != 0 && pendingScrollToPosition != null) {
-            val child = makeView(pendingScrollToPosition, Direction.END, recycler)
-            scroll = getPaddingStartForOrientation() + getChildStart(child)
+            try {
+                val child = makeView(pendingScrollToPosition, Direction.END, recycler)
+                scroll = getPaddingStartForOrientation() + getChildStart(child)
+            } catch (e: IndexOutOfBoundsException) {
+                //pendingScrollPosition is not in dataset bounds
+            }
 
             this.pendingScrollToPosition = null
         }
@@ -335,13 +339,15 @@ open class SpannedGridLayoutManager(
 
         recycleChildrenOutOfBounds(Direction.END, recycler)
 
+        val (childEnd, _) = getGreatestChildEnd()
+
         // Check if after changes in layout we aren't out of its bounds
-        val overScroll = scroll + size - layoutEnd - getPaddingEndForOrientation()
+        val overScroll = size - childEnd - getPaddingEndForOrientation()
         val isLastItemInScreen = (0 until childCount).map { getPosition(getChildAt(it)!!) }.contains(itemCount - 1)
         val allItemsInScreen = itemCount == 0 || (firstVisiblePosition == 0 && isLastItemInScreen)
         if (!allItemsInScreen && overScroll > 0) {
             // If we are, fix it
-//            scrollBy(overScroll, state)
+            scrollBy(overScroll, state, childEnd)
 
             if (overScroll > 0) {
                 fillBefore(recycler)
@@ -587,7 +593,7 @@ open class SpannedGridLayoutManager(
             return 0
         }
 
-        val (childEnd, childIndex) = getGreatestChildEnd()
+        val (childEnd, _) = getGreatestChildEnd()
 
         val canScrollBackwards = (firstVisiblePosition) >= 0 &&
                 0 < scroll &&
@@ -602,7 +608,7 @@ open class SpannedGridLayoutManager(
             return 0
         }
 
-        val correctedDistance = scrollBy(-delta, state, childEnd, childIndex)
+        val correctedDistance = scrollBy(-delta, state, childEnd)
 
         val direction = if (delta > 0) Direction.END else Direction.START
 
@@ -616,9 +622,8 @@ open class SpannedGridLayoutManager(
     /**
      * Scrolls distance based on orientation. Corrects distance if out of bounds.
      */
-    protected open fun scrollBy(distance: Int, state: RecyclerView.State, childEnd: Int, childIndex: Int): Int {
+    protected open fun scrollBy(distance: Int, state: RecyclerView.State, childEnd: Int): Int {
         val start = 0
-        val end = childEnd
 
         var correctedDistance = distance
 
@@ -631,8 +636,8 @@ open class SpannedGridLayoutManager(
         }
 
         // Correct scroll if it would make the layout scroll out of bounds at the end
-        if (distance < 0 && size - distance > end) {
-            correctedDistance = (size - end)
+        if (distance < 0 && size - distance > childEnd) {
+            correctedDistance = (size - childEnd)
             scroll += distance - correctedDistance
         }
 
