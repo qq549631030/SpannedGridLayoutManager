@@ -12,9 +12,7 @@ import android.os.Parcelable
 import android.util.Log
 import android.util.SparseArray
 import android.view.View
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.OrientationHelper
-import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.*
 
 /**
  * A [LinearLayoutManager] which layouts and orders its views
@@ -115,17 +113,53 @@ open class SpannedGridLayoutManager(
      * First visible position in layout - changes with recycling
      */
     open val firstVisiblePosition: Int get() {
-        if (childCount == 0) { return 0 }
+        if (childCount == 0) { return -1 }
         return getPosition(getChildAt(0)!!)
     }
+
+    open val firstCompletelyVisiblePosition: Int
+        get() {
+            if (childCount == 0) return -1
+
+            for (i in 0 until childCount) {
+                val child = getChildAt(i) ?: continue
+                val rect = Rect().apply { getDecoratedBoundsWithMargins(child, this) }
+
+                if (orientation == VERTICAL) {
+                    if (rect.top >= 0 && rect.bottom <= size) return i
+                } else {
+                    if (rect.left >= 0 && rect.right <= size) return i
+                }
+            }
+
+            return -1
+        }
 
     /**
      * Last visible position in layout - changes with recycling
      */
     open val lastVisiblePosition: Int get() {
-        if (childCount == 0) { return 0 }
+        if (childCount == 0) { return -1 }
         return getPosition(getChildAt(childCount - 1)!!)
     }
+
+    open val lastCompletelyVisiblePosition: Int
+        get() {
+            if (childCount == 0) return -1
+
+            for (i in childCount - 1 downTo 0) {
+                val child = getChildAt(i) ?: continue
+                val rect = Rect().apply { getDecoratedBoundsWithMargins(child, this) }
+
+                if (orientation == VERTICAL) {
+                    if (rect.top >= 0 && rect.bottom <= size) return i
+                } else {
+                    if (rect.left >= 0 && rect.right <= size) return i
+                }
+            }
+
+            return -1
+        }
 
     /**
      * Start of the layout. Should be [getPaddingEndForOrientation] + first visible item top
@@ -167,6 +201,8 @@ open class SpannedGridLayoutManager(
             // If the SpanSizeLookup changes, the views need a whole re-layout
             requestLayout()
         }
+
+    protected var recyclerView: RecyclerView? = null
 
     /**
      * SpanSize provider for this LayoutManager.
@@ -241,6 +277,16 @@ open class SpannedGridLayoutManager(
         )
     }
 
+    override fun onAttachedToWindow(view: RecyclerView?) {
+        recyclerView = view
+        super.onAttachedToWindow(view)
+    }
+
+    override fun onDetachedFromWindow(view: RecyclerView?, recycler: RecyclerView.Recycler?) {
+        recyclerView = null
+        super.onDetachedFromWindow(view, recycler)
+    }
+
     //==============================================================================================
     //  ~ View layouting methods
     //==============================================================================================
@@ -277,7 +323,10 @@ open class SpannedGridLayoutManager(
 
         // Restore scroll position based on first visible view
         val pendingScrollToPosition = pendingScrollToPosition
-        if (itemCount != 0 && pendingScrollToPosition != null && pendingScrollToPosition >= getSpanCountForOrientation()) {
+        if (itemCount != 0 && pendingScrollToPosition != null) {
+            val child = makeView(pendingScrollToPosition, Direction.END, recycler)
+            scroll = getPaddingStartForOrientation() + getChildStart(child)
+
             this.pendingScrollToPosition = null
         }
 
@@ -538,16 +587,11 @@ open class SpannedGridLayoutManager(
             return 0
         }
 
-//        if (delta > 0 && getChildEnd(getChildAt(childCount - 1)!!) - getChildStart(getChildAt(0)!!) <= orientationHelper.totalSpace) {
-//            return 0
-//        }
         val (childEnd, childIndex) = getGreatestChildEnd()
 
         val canScrollBackwards = (firstVisiblePosition) >= 0 &&
                 0 < scroll &&
                 delta < 0
-
-//        Log.e("LockscreenWIdgets", "$size $childEnd, $layoutEnd")
 
         val canScrollForward = lastVisiblePosition <= state.itemCount &&
                 (size) < (childEnd) &&
@@ -580,26 +624,17 @@ open class SpannedGridLayoutManager(
 
         scroll -= distance
 
-//        Log.e("LockscreenWidgets", "end $end, scroll $scroll, dist $distance")
-
         // Correct scroll if was out of bounds at start
         if (scroll < start) {
             correctedDistance += scroll
             scroll = start
         }
 
-//        Log.e("LockscreenWidgets", "dist $distance, scroll $scroll, size $size, end $end, layoutEnd $layoutEnd, childEnd $childEnd")
-
-//        Log.e("LockscreenWIdgets", "size $size, childEnd $childEnd")
-
         // Correct scroll if it would make the layout scroll out of bounds at the end
         if (distance < 0 && size - distance > end) {
-//            Log.e("LockscreenWidgets", "overscroll: $size > $childEnd, dist $distance, newDist ${size - childEnd}")
             correctedDistance = (size - end)
             scroll += distance - correctedDistance
         }
-
-//        Log.e("LockscreenWidgets", "newScroll: $scroll, correctedDist $correctedDistance")
 
         orientationHelper.offsetChildren(correctedDistance)
 
@@ -613,7 +648,7 @@ open class SpannedGridLayoutManager(
     }
 
     override fun smoothScrollToPosition(recyclerView: RecyclerView, state: RecyclerView.State, position: Int) {
-        val smoothScroller = object: androidx.recyclerview.widget.LinearSmoothScroller(recyclerView.context) {
+        val smoothScroller = object: LinearSmoothScroller(recyclerView.context) {
 
             override fun computeScrollVectorForPosition(targetPosition: Int): PointF? {
                 if (childCount == 0) {
@@ -621,11 +656,12 @@ open class SpannedGridLayoutManager(
                 }
 
                 val direction = if (targetPosition < firstVisiblePosition) -1 else 1
-                return PointF(0f, direction.toFloat())
+                return PointF(if (orientation == HORIZONTAL) direction.toFloat() else 0f,
+                    if (orientation == VERTICAL) direction.toFloat() else 0f)
             }
 
             override fun getVerticalSnapPreference(): Int {
-                return androidx.recyclerview.widget.LinearSmoothScroller.SNAP_TO_START
+                return SNAP_TO_START
             }
         }
 
@@ -785,8 +821,6 @@ open class SpannedGridLayoutManager(
             }
         }
 
-//        Log.e("LockscreenWidgets", "greatestEnd $greatestEnd, i $greatestI")
-
         return greatestEnd to greatestI
     }
 
@@ -828,7 +862,7 @@ open class SpannedGridLayoutManager(
         }
     }
 
-    protected open fun getSpanCountForOrientation(): Int {
+    open fun getSpanCountForOrientation(): Int {
         return if (orientation == RecyclerView.VERTICAL) {
             horizontalSpanCount
         } else {
