@@ -8,12 +8,12 @@ import android.view.ViewGroup
 /**
  * Created by Jorge Martín on 24/5/17.
  */
-class GridItemAdapter: androidx.recyclerview.widget.RecyclerView.Adapter<GridItemViewHolder>() {
+class GridItemAdapter: RecyclerView.Adapter<GridItemViewHolder>() {
 
     val clickedItems: MutableList<Boolean>
 
     init {
-        clickedItems = MutableList(itemCount, { false })
+        clickedItems = MutableList(itemCount) { false }
         setHasStableIds(true)
     }
 
@@ -51,4 +51,4 @@ class GridItemAdapter: androidx.recyclerview.widget.RecyclerView.Adapter<GridIte
     }
 }
 
-class GridItemViewHolder(itemView: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView)
+class GridItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)

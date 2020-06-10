@@ -10,11 +10,9 @@ import android.widget.TextView
  * Created by Jorge Martín on 24/5/17.
  */
 class GridItemView(context: Context?) : FrameLayout(context) {
-
-    private var title: TextView
+    private var title: TextView = TextView(context)
 
     init {
-        title = TextView(context)
         title.gravity = Gravity.CENTER
         addView(title, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
     }

@@ -4,25 +4,22 @@ import android.os.Bundle
 import androidx.recyclerview.widget.RecyclerView
 import com.arasthel.spannedgridlayoutmanager.SpanSize
 import com.arasthel.spannedgridlayoutmanager.SpannedGridLayoutManager
-import com.arasthel.spannedgridlayoutmanager.SpannedGridLayoutManager.Orientation.*
 
 /**
  * Created by Jorge Martín on 24/5/17.
  */
 class MainActivity: androidx.appcompat.app.AppCompatActivity() {
+    private val recyclerview: RecyclerView by lazy { findViewById(R.id.recyclerView) }
 
-    val recyclerview: androidx.recyclerview.widget.RecyclerView by lazy { findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.recyclerView) }
-
-    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_main)
 
-        val spannedGridLayoutManager = SpannedGridLayoutManager(orientation = VERTICAL, spans = 4)
+        val spannedGridLayoutManager = SpannedGridLayoutManager(orientation = RecyclerView.VERTICAL, _verticalSpans = 4, _horizontalSpans = 4, context = this)
         spannedGridLayoutManager.itemOrderIsStable = true
 
         recyclerview.layoutManager = spannedGridLayoutManager
-
         recyclerview.addItemDecoration(SpaceItemDecorator(left = 10, top = 10, right = 10, bottom = 10))
 
         val adapter = GridItemAdapter()
@@ -44,11 +41,9 @@ class MainActivity: androidx.appcompat.app.AppCompatActivity() {
         recyclerview.adapter = adapter
     }
 
-    override fun onSaveInstanceState(outState: Bundle?) {
+    override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 
-        outState?.putBooleanArray("clicked", (recyclerview.adapter as GridItemAdapter).clickedItems.toBooleanArray())
-
+        outState.putBooleanArray("clicked", (recyclerview.adapter as GridItemAdapter).clickedItems.toBooleanArray())
     }
-
 }

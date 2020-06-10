@@ -11,16 +11,13 @@ import android.view.View
 class SpaceItemDecorator(val left: Int,
                          val top: Int,
                          val right: Int,
-                         val bottom: Int): androidx.recyclerview.widget.RecyclerView.ItemDecoration() {
+                         val bottom: Int): RecyclerView.ItemDecoration() {
+    constructor(rect: Rect): this(rect.left, rect.top, rect.right, rect.bottom)
 
-
-    constructor(rect: android.graphics.Rect): this(rect.left, rect.top, rect.right, rect.bottom)
-
-    override fun getItemOffsets(outRect: Rect, view: View, parent: androidx.recyclerview.widget.RecyclerView, state: androidx.recyclerview.widget.RecyclerView.State) {
+    override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
         outRect.left = this.left
         outRect.top = this.top
         outRect.right = this.right
         outRect.bottom = this.bottom
     }
-
 }
