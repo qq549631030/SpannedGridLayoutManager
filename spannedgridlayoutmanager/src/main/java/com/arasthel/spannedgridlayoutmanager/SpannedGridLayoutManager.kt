@@ -580,7 +580,7 @@ open class SpannedGridLayoutManager(
 
         scroll -= distance
 
-        Log.e("LockscreenWidgets", "end $end, scroll $scroll, dist $distance")
+//        Log.e("LockscreenWidgets", "end $end, scroll $scroll, dist $distance")
 
         // Correct scroll if was out of bounds at start
         if (scroll < start) {
@@ -599,7 +599,7 @@ open class SpannedGridLayoutManager(
             scroll += distance - correctedDistance
         }
 
-        Log.e("LockscreenWidgets", "newScroll: $scroll, correctedDist $correctedDistance")
+//        Log.e("LockscreenWidgets", "newScroll: $scroll, correctedDist $correctedDistance")
 
         orientationHelper.offsetChildren(correctedDistance)
 
