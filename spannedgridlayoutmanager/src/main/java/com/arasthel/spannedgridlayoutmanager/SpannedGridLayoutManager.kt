@@ -1019,10 +1019,10 @@ open class RectsHelper(val layoutManager: SpannedGridLayoutManager,
      * Find a valid free rect for the given span size
      */
     protected open fun findRectForSpanSize(spanSize: SpanSize): Rect {
-        val lane = freeRects.first {
+        val lane = freeRects.firstOrNull() {
             val itemRect = Rect(it.left, it.top, it.left + spanSize.width, it.top + spanSize.height)
             it.contains(itemRect)
-        }
+        } ?: return Rect(0, 0, spanSize.width, spanSize.height)
 
         return Rect(lane.left, lane.top, lane.left + spanSize.width, lane.top + spanSize.height)
     }
