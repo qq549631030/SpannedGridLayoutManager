@@ -19,13 +19,13 @@ import androidx.recyclerview.widget.*
  * based on width and height spans.
  *
  * @param orientation Whether the views will be layouted and scrolled in vertical or horizontal
- * @param _verticalSpans How many spans does the layout have per row
+ * @param _rowCount How many spans does the layout have per row
  */
 open class SpannedGridLayoutManager(
     context: Context,
     @RecyclerView.Orientation orientation: Int,
-    _verticalSpans: Int,
-    _horizontalSpans: Int
+    _rowCount: Int,
+    _columnCount: Int
 ) : LinearLayoutManager(context, orientation, false) {
 
     //==============================================================================================
@@ -53,8 +53,8 @@ open class SpannedGridLayoutManager(
     /**
      * Space occupied by each span
      */
-    val itemWidth: Int get() = if (customWidth > -1) customWidth else (decoratedWidth / horizontalSpanCount)
-    val itemHeight: Int get() = if (customHeight > -1) customHeight else (decoratedHeight / verticalSpanCount)
+    val itemWidth: Int get() = if (customWidth > -1) customWidth else (decoratedWidth / columnCount)
+    val itemHeight: Int get() = if (customHeight > -1) customHeight else (decoratedHeight / rowCount)
 
     val orientationHelper by lazy {
         if (orientation == RecyclerView.VERTICAL) OrientationHelper.createVerticalHelper(this)
@@ -72,31 +72,31 @@ open class SpannedGridLayoutManager(
             requestLayout()
         }
 
-    var verticalSpanCount: Int = _verticalSpans
+    var rowCount: Int = _rowCount
         set(value) {
             if (field == value) {
                 return
             }
 
             field = value
-            require(verticalSpanCount >= 1) {
+            require(rowCount >= 1) {
                 ("Span count should be at least 1. Provided "
-                        + verticalSpanCount)
+                        + rowCount)
             }
             spanSizeLookup?.invalidateCache()
             requestLayout()
         }
 
-    var horizontalSpanCount: Int = _horizontalSpans
+    var columnCount: Int = _columnCount
         set(value) {
             if (field == value) {
                 return
             }
 
             field = value
-            require(horizontalSpanCount >= 1) {
+            require(columnCount >= 1) {
                 ("Span count should be at least 1. Provided "
-                        + horizontalSpanCount)
+                        + columnCount)
             }
             spanSizeLookup?.invalidateCache()
             requestLayout()
@@ -257,12 +257,12 @@ open class SpannedGridLayoutManager(
     //==============================================================================================
 
     init {
-        if (_verticalSpans < 1) {
-            throw InvalidMaxSpansException(_verticalSpans)
+        if (_rowCount < 1) {
+            throw InvalidMaxSpansException(_rowCount)
         }
 
-        if (_horizontalSpans < 1) {
-            throw InvalidMaxSpansException(_horizontalSpans)
+        if (_columnCount < 1) {
+            throw InvalidMaxSpansException(_columnCount)
         }
     }
 
@@ -869,9 +869,9 @@ open class SpannedGridLayoutManager(
 
     open fun getSpanCountForOrientation(): Int {
         return if (orientation == RecyclerView.VERTICAL) {
-            horizontalSpanCount
+            columnCount
         } else {
-            verticalSpanCount
+            rowCount
         }
     }
 
@@ -1001,9 +1001,9 @@ open class RectsHelper(val layoutManager: SpannedGridLayoutManager,
     init {
         // There will always be a free rect that goes to Int.MAX_VALUE
         val initialFreeRect = if (orientation == RecyclerView.VERTICAL) {
-            Rect(0, 0, Int.MAX_VALUE, layoutManager.horizontalSpanCount)
+            Rect(0, 0, layoutManager.columnCount, Int.MAX_VALUE)
         } else {
-            Rect(0, 0, layoutManager.verticalSpanCount, Int.MAX_VALUE)
+            Rect(0, 0, Int.MAX_VALUE, layoutManager.rowCount)
         }
         freeRects.add(initialFreeRect)
     }
