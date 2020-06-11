@@ -1001,9 +1001,9 @@ open class RectsHelper(val layoutManager: SpannedGridLayoutManager,
     init {
         // There will always be a free rect that goes to Int.MAX_VALUE
         val initialFreeRect = if (orientation == RecyclerView.VERTICAL) {
-            Rect(0, 0, layoutManager.verticalSpanCount, Int.MAX_VALUE)
+            Rect(0, 0, layoutManager.horizontalSpanCount, Int.MAX_VALUE)
         } else {
-            Rect(0, 0, Int.MAX_VALUE, layoutManager.horizontalSpanCount)
+            Rect(0, 0, Int.MAX_VALUE, layoutManager.verticalSpanCount)
         }
         freeRects.add(initialFreeRect)
     }
