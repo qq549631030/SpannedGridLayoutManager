@@ -20,8 +20,12 @@ import androidx.recyclerview.widget.RecyclerView.VERTICAL
  * A [RecyclerView.LayoutManager] which layouts and orders its views
  * based on width and height spans.
  *
- * @param orientation Whether the views will be layouted and scrolled in vertical or horizontal
- * @param _rowCount How many spans does the layout have per row
+ * @param context a Context object
+ * @param orientation Whether the views will be laid out and scrolled vertically or horizontally.
+ * @param _rowCount How many rows there should be. If your layout only cares about columns, set this to 1,
+ * and set [customHeight].
+ * @param _columnCount How many colums there should be. If your layout only cares about rows, set this to 1,
+ * and set [customWidth].
  */
 open class SpannedGridLayoutManager(
     context: Context,
@@ -35,7 +39,7 @@ open class SpannedGridLayoutManager(
     //==============================================================================================
 
     /**
-     * Direction of scroll for layouting process
+     * Direction of scroll for layout process
      * <li>START</li>
      * <li>END</li>
      */
@@ -43,37 +47,62 @@ open class SpannedGridLayoutManager(
         START, END
     }
 
-    //==============================================================================================
-    //  ~ Properties
-    //==============================================================================================
-
+    /**
+     * The width of the RecyclerView, taking into account padding.
+     */
     val decoratedWidth: Int
         get() = width - paddingLeft - paddingRight
+
+    /**
+     * The height of the RecyclerView, taking into account padding.
+     */
     val decoratedHeight: Int
         get() = height - paddingTop - paddingBottom
 
     /**
-     * Space occupied by each span
+     * The width of each item. Normally this is the width of the RecyclerView, divided
+     * by the number of columns in the layout, but you can set your own dimension with [customWidth].
      */
     val itemWidth: Int get() = if (customWidth > -1) customWidth else (decoratedWidth / columnCount)
+    /**
+     * The height of each item. Normally this is the height of the RecyclerView, divided
+     * by the number of rows in the layout, but you can set your own dimension with [customHeight].
+     */
     val itemHeight: Int get() = if (customHeight > -1) customHeight else (decoratedHeight / rowCount)
 
+    /**
+     * Delegate some orientation-specific logic.
+     */
     val orientationHelper by lazy {
-        if (orientation == VERTICAL) OrientationHelper.createVerticalHelper(this)
-        else OrientationHelper.createHorizontalHelper(this)
+        OrientationHelper.createOrientationHelper(this, orientation)
     }
 
+    /**
+     * A custom block width for items laid out.
+     * TODO: Support WRAP_CONTENT?
+     */
     var customWidth = -1
         set(value) {
             field = value
             requestLayout()
         }
+
+    /**
+     * A custom block height for items laid out.
+     * TODO: Support WRAP_CONTENT?
+     */
     var customHeight = -1
         set(value) {
             field = value
             requestLayout()
         }
 
+    /**
+     * The number of rows to lay out.
+     * This is mostly just used for setting the height of items,
+     * based on the parent RecyclerView's height. If your items overflow
+     * the row count, and you have a vertical layout, you can just scroll.
+     */
     var rowCount: Int = _rowCount
         set(value) {
             if (field == value) {
@@ -89,6 +118,12 @@ open class SpannedGridLayoutManager(
             requestLayout()
         }
 
+    /**
+     * The number of columns to lay out.
+     * This is mostly just used for setting the width of items,
+     * based on the parent RecyclerView's width. If your items overflow
+     * the column count, and you have a horizontal layout, you can just scroll.
+     */
     var columnCount: Int = _columnCount
         set(value) {
             if (field == value) {
@@ -104,21 +139,30 @@ open class SpannedGridLayoutManager(
             requestLayout()
         }
 
+    /**
+     * Keep track of how much we've scrolled, since Android doesn't
+     * really do that for us.
+     */
     var scroll = 0
 
     /**
-     * Helper get free rects to place views
+     * Delegate mapping items.
      */
     protected lateinit var rectsHelper: RectsHelper
 
     /**
-     * First visible position in layout - changes with recycling
+     * First currently visible position.
+     * Similar to [LinearLayoutManager.findFirstVisibleItemPosition]
      */
     open val firstVisiblePosition: Int get() {
         if (childCount == 0) { return -1 }
         return getPosition(getChildAt(0)!!)
     }
 
+    /**
+     * First currently completely visible position.
+     * Similar to [LinearLayoutManager.findFirstCompletelyVisibleItemPosition]
+     */
     open val firstCompletelyVisiblePosition: Int
         get() {
             if (childCount == 0) return -1
@@ -138,13 +182,18 @@ open class SpannedGridLayoutManager(
         }
 
     /**
-     * Last visible position in layout - changes with recycling
+     * Last currently visible position.
+     * Similar to [LinearLayoutManager.findLastVisibleItemPosition]
      */
     open val lastVisiblePosition: Int get() {
         if (childCount == 0) { return -1 }
         return getPosition(getChildAt(childCount - 1)!!)
     }
 
+    /**
+     * First currently completely visible position.
+     * Similar to [LinearLayoutManager.findLastCompletelyVisibleItemPosition]
+     */
     open val lastCompletelyVisiblePosition: Int
         get() {
             if (childCount == 0) return -1
@@ -178,7 +227,7 @@ open class SpannedGridLayoutManager(
     val size: Int get() = if (orientation == VERTICAL) decoratedHeight else decoratedWidth
 
     /**
-     * Cache of rects for layouted views
+     * Cache of rects for laid out Views
      */
     protected val childFrames = mutableMapOf<Int, Rect>()
 
@@ -204,11 +253,18 @@ open class SpannedGridLayoutManager(
             requestLayout()
         }
 
+    /**
+     * A reference to the [RecyclerView] this layout manager
+     * is attached to.
+     */
     protected var recyclerView: RecyclerView? = null
 
     /**
      * SpanSize provider for this LayoutManager.
      * SpanSizes can be cached to improve efficiency.
+     *
+     * TODO: it's a little weird having the lookup callback be a constructor parameter.
+     * TODO: Maybe add a new function to override instead.
      */
     open class SpanSizeLookup(
             /** Used to provide an SpanSize for each item. */
@@ -254,10 +310,6 @@ open class SpannedGridLayoutManager(
         }
     }
 
-    //==============================================================================================
-    //  ~ Initializer
-    //==============================================================================================
-
     init {
         if (_rowCount < 1) {
             throw InvalidMaxSpansException(_rowCount)
@@ -267,10 +319,6 @@ open class SpannedGridLayoutManager(
             throw InvalidMaxSpansException(_columnCount)
         }
     }
-
-    //==============================================================================================
-    //  ~ Override parent
-    //==============================================================================================
 
     override fun generateDefaultLayoutParams(): RecyclerView.LayoutParams {
         return RecyclerView.LayoutParams(
@@ -289,11 +337,8 @@ open class SpannedGridLayoutManager(
         super.onDetachedFromWindow(view, recycler)
     }
 
-    //==============================================================================================
-    //  ~ View layouting methods
-    //==============================================================================================
-
     override fun onLayoutChildren(recycler: RecyclerView.Recycler, state: RecyclerView.State) {
+        //TODO: This might be better as a single-init global member.
         rectsHelper = RectsHelper(this, orientation)
 
         layoutStart = getPaddingStartForOrientation()
@@ -541,10 +586,6 @@ open class SpannedGridLayoutManager(
         }
     }
 
-    //==============================================================================================
-    //  ~ Scroll methods
-    //==============================================================================================
-
     override fun computeVerticalScrollOffset(state: RecyclerView.State): Int {
         return computeScrollOffset()
     }
@@ -654,6 +695,9 @@ open class SpannedGridLayoutManager(
         requestLayout()
     }
 
+    /**
+     * TODO: not sure this works properly
+     */
     override fun smoothScrollToPosition(recyclerView: RecyclerView, state: RecyclerView.State, position: Int) {
         val smoothScroller = object: LinearSmoothScroller(recyclerView.context) {
 
@@ -668,6 +712,10 @@ open class SpannedGridLayoutManager(
             }
 
             override fun getVerticalSnapPreference(): Int {
+                return SNAP_TO_START
+            }
+
+            override fun getHorizontalSnapPreference(): Int {
                 return SNAP_TO_START
             }
         }
@@ -719,17 +767,11 @@ open class SpannedGridLayoutManager(
             val row = rectsHelper.rows[rowIndex] ?: continue
 
             for (itemIndex in row) {
-
                 if (findViewByPosition(itemIndex) != null) continue
-
                 makeAndAddView(itemIndex, Direction.END, recycler)
             }
         }
     }
-
-    //==============================================================================================
-    //  ~ Decorated position and sizes
-    //==============================================================================================
 
     override fun getDecoratedMeasuredWidth(child: View): Int {
         val position = getPosition(child)
@@ -788,10 +830,6 @@ open class SpannedGridLayoutManager(
         return bottom
     }
 
-    //==============================================================================================
-    //  ~ Orientation Utils
-    //==============================================================================================
-
     protected open fun getPaddingStartForOrientation(): Int {
         return orientationHelper.startAfterPadding
     }
@@ -841,7 +879,7 @@ open class SpannedGridLayoutManager(
     }
 
     /**
-     * Get the smalled currently laid-out coordinate.
+     * Get the smallest currently laid-out coordinate.
      * For vertical layouts, this will be the top of the top-most
      * item (not necessarily the top of the child in the first adapter
      * position). For horizontal layouts, it's the left.
