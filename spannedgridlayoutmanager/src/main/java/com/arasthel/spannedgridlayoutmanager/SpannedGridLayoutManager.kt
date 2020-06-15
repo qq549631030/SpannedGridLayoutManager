@@ -63,12 +63,12 @@ open class SpannedGridLayoutManager(
      * The width of each item. Normally this is the width of the RecyclerView, divided
      * by the number of columns in the layout, but you can set your own dimension with [customWidth].
      */
-    val itemWidth: Int get() = if (customWidth > -1) customWidth else (decoratedWidth / columnCount)
+    val itemWidth: Int get() = if (customWidth > 0) customWidth else (decoratedWidth / columnCount)
     /**
      * The height of each item. Normally this is the height of the RecyclerView, divided
      * by the number of rows in the layout, but you can set your own dimension with [customHeight].
      */
-    val itemHeight: Int get() = if (customHeight > -1) customHeight else (decoratedHeight / rowCount)
+    val itemHeight: Int get() = if (customHeight > 0) customHeight else (decoratedHeight / rowCount)
 
     /**
      * Delegate some orientation-specific logic.
@@ -338,8 +338,12 @@ open class SpannedGridLayoutManager(
     }
 
     override fun onLayoutChildren(recycler: RecyclerView.Recycler, state: RecyclerView.State) {
-        //TODO: This might be better as a single-init global member.
         rectsHelper = RectsHelper(this, orientation)
+
+        //Sometimes the width of the RecyclerView is 0, which can cause divide by zero errors
+        if (getItemSizeForOrientation() <= 0) {
+            return
+        }
 
         layoutStart = getPaddingStartForOrientation()
 
