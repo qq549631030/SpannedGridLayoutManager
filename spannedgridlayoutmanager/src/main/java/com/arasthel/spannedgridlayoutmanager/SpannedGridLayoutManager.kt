@@ -12,7 +12,10 @@ import android.os.Parcelable
 import android.util.Log
 import android.util.SparseArray
 import android.view.View
-import androidx.recyclerview.widget.*
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.LinearSmoothScroller
+import androidx.recyclerview.widget.OrientationHelper
+import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
 import androidx.recyclerview.widget.RecyclerView.VERTICAL
 
@@ -154,10 +157,46 @@ open class SpannedGridLayoutManager(
      * First currently visible position.
      * Similar to [LinearLayoutManager.findFirstVisibleItemPosition]
      */
-    open val firstVisiblePosition: Int get() {
-        if (childCount == 0) { return -1 }
-        return getPosition(getChildAt(0)!!)
-    }
+    open val firstVisiblePosition: Int
+        get() {
+            if (childCount == 0) return -1
+            val item = firstVisibleItem ?: return -1
+
+            return getAdapterPosition(item)
+        }
+
+    open val firstVisibleItem: View?
+        get() {
+            if (childCount == 0) return null
+
+            var firstChild: View? = null
+            var firstPosition = Int.MAX_VALUE
+
+            for (i in 0 until childCount) {
+                val child = getChildAt(i) ?: continue
+                val rect = Rect().apply { getDecoratedBoundsWithMargins(child, this) }
+
+                if (orientation == VERTICAL) {
+                    if (rect.top in 0 until size || rect.bottom in 1 until size) {
+                        val adapterPosition = getAdapterPosition(child)
+                        if (adapterPosition < firstPosition) {
+                            firstChild = child
+                            firstPosition = adapterPosition
+                        }
+                    }
+                } else {
+                    if (rect.left in 0 until size || rect.right in 1 until size) {
+                        val adapterPosition = getAdapterPosition(child)
+                        if (adapterPosition < firstPosition) {
+                            firstChild = child
+                            firstPosition = adapterPosition
+                        }
+                    }
+                }
+            }
+
+            return firstChild
+        }
 
     /**
      * First currently completely visible position.
@@ -166,29 +205,88 @@ open class SpannedGridLayoutManager(
     open val firstCompletelyVisiblePosition: Int
         get() {
             if (childCount == 0) return -1
+            val item = firstCompletelyVisibleItem ?: return -1
+
+            return getAdapterPosition(item)
+        }
+
+    open val firstCompletelyVisibleItem: View?
+        get() {
+            if (childCount == 0) return null
+
+            var firstChild: View? = null
+            var firstPosition = Int.MAX_VALUE
 
             for (i in 0 until childCount) {
                 val child = getChildAt(i) ?: continue
                 val rect = Rect().apply { getDecoratedBoundsWithMargins(child, this) }
 
                 if (orientation == VERTICAL) {
-                    if (rect.top >= 0 && rect.bottom <= size) return i
+                    if (rect.top >= 0 && rect.bottom <= size) {
+                        val adapterPosition = getAdapterPosition(child)
+                        if (adapterPosition < firstPosition) {
+                            firstChild = child
+                            firstPosition = adapterPosition
+                        }
+                    }
                 } else {
-                    if (rect.left >= 0 && rect.right <= size) return i
+                    if (rect.left >= 0 && rect.right <= size) {
+                        val adapterPosition = getAdapterPosition(child)
+                        if (adapterPosition < firstPosition) {
+                            firstChild = child
+                            firstPosition = adapterPosition
+                        }
+                    }
                 }
             }
 
-            return -1
+            return firstChild
         }
 
     /**
      * Last currently visible position.
      * Similar to [LinearLayoutManager.findLastVisibleItemPosition]
      */
-    open val lastVisiblePosition: Int get() {
-        if (childCount == 0) { return -1 }
-        return getPosition(getChildAt(childCount - 1)!!)
-    }
+    open val lastVisiblePosition: Int
+        get() {
+            if (childCount == 0) return -1
+            val item = lastVisibleItem ?: return -1
+
+            return getAdapterPosition(item)
+        }
+
+    open val lastVisibleItem: View?
+        get() {
+            if (childCount == 0) return null
+
+            var firstChild: View? = null
+            var firstPosition = Int.MIN_VALUE
+
+            for (i in childCount - 1 downTo 0) {
+                val child = getChildAt(i) ?: continue
+                val rect = Rect().apply { getDecoratedBoundsWithMargins(child, this) }
+
+                if (orientation == VERTICAL) {
+                    if (rect.top in 0 until size || rect.bottom in 1 until size) {
+                        val adapterPosition = getAdapterPosition(child)
+                        if (adapterPosition > firstPosition) {
+                            firstChild = child
+                            firstPosition = adapterPosition
+                        }
+                    }
+                } else {
+                    if (rect.left in 0 until size || rect.right in 1 until size) {
+                        val adapterPosition = getAdapterPosition(child)
+                        if (adapterPosition > firstPosition) {
+                            firstChild = child
+                            firstPosition = adapterPosition
+                        }
+                    }
+                }
+            }
+
+            return firstChild
+        }
 
     /**
      * First currently completely visible position.
@@ -197,19 +295,42 @@ open class SpannedGridLayoutManager(
     open val lastCompletelyVisiblePosition: Int
         get() {
             if (childCount == 0) return -1
+            val item = lastCompletelyVisibleItem ?: return -1
+
+            return getAdapterPosition(item)
+        }
+
+    open val lastCompletelyVisibleItem: View?
+        get() {
+            if (childCount == 0) return null
+
+            var firstChild: View? = null
+            var firstPosition = Int.MAX_VALUE
 
             for (i in childCount - 1 downTo 0) {
                 val child = getChildAt(i) ?: continue
                 val rect = Rect().apply { getDecoratedBoundsWithMargins(child, this) }
 
                 if (orientation == VERTICAL) {
-                    if (rect.top >= 0 && rect.bottom <= size) return i
+                    if (rect.top >= 0 && rect.bottom <= size) {
+                        val adapterPosition = getAdapterPosition(child)
+                        if (adapterPosition > firstPosition) {
+                            firstChild = child
+                            firstPosition = adapterPosition
+                        }
+                    }
                 } else {
-                    if (rect.left >= 0 && rect.right <= size) return i
+                    if (rect.left >= 0 && rect.right <= size) {
+                        val adapterPosition = getAdapterPosition(child)
+                        if (adapterPosition > firstPosition) {
+                            firstChild = child
+                            firstPosition = adapterPosition
+                        }
+                    }
                 }
             }
 
-            return -1
+            return firstChild
         }
 
     /**
@@ -224,7 +345,8 @@ open class SpannedGridLayoutManager(
     /**
      * Total length of the layout depending on current orientation
      */
-    val size: Int get() = if (orientation == VERTICAL) decoratedHeight else decoratedWidth
+    val size: Int
+        get() = if (orientation == VERTICAL) decoratedHeight else decoratedWidth
 
     /**
      * Cache of rects for laid out Views
@@ -591,11 +713,29 @@ open class SpannedGridLayoutManager(
     }
 
     override fun computeVerticalScrollOffset(state: RecyclerView.State): Int {
-        return computeScrollOffset()
+//        return computeScrollOffset()
+        return ScrollbarHelper.computeScrollOffset(
+            state,
+            orientationHelper,
+            firstVisibleItem,
+            lastVisibleItem,
+            this,
+            smoothScrollbarEnabled = true,
+            reverseLayout = false
+        )
     }
 
     override fun computeHorizontalScrollOffset(state: RecyclerView.State): Int {
-        return computeScrollOffset()
+//        return computeScrollOffset()
+        return ScrollbarHelper.computeScrollOffset(
+            state,
+            orientationHelper,
+            firstVisibleItem,
+            lastVisibleItem,
+            this,
+            smoothScrollbarEnabled = true,
+            reverseLayout = false
+        )
     }
 
     private fun computeScrollOffset(): Int {
@@ -603,19 +743,51 @@ open class SpannedGridLayoutManager(
     }
 
     override fun computeVerticalScrollExtent(state: RecyclerView.State): Int {
-        return childCount
+//        return 1
+        return ScrollbarHelper.computeScrollExtent(
+            state,
+            orientationHelper,
+            firstVisibleItem,
+            lastVisibleItem,
+            this,
+            true
+        )
     }
 
     override fun computeHorizontalScrollExtent(state: RecyclerView.State): Int {
-        return childCount
+//        return 1
+        return ScrollbarHelper.computeScrollExtent(
+            state,
+            orientationHelper,
+            firstVisibleItem,
+            lastVisibleItem,
+            this,
+            true
+        )
     }
 
     override fun computeVerticalScrollRange(state: RecyclerView.State): Int {
-        return state.itemCount
+//        return state.itemCount - 1
+        return ScrollbarHelper.computeScrollRange(
+            state,
+            orientationHelper,
+            firstVisibleItem,
+            lastVisibleItem,
+            this,
+            true
+        )
     }
 
     override fun computeHorizontalScrollRange(state: RecyclerView.State): Int {
-        return state.itemCount
+//        return state.itemCount - 1
+        return ScrollbarHelper.computeScrollRange(
+            state,
+            orientationHelper,
+            firstVisibleItem,
+            lastVisibleItem,
+            this,
+            true
+        )
     }
 
     override fun canScrollVertically(): Boolean {
@@ -656,7 +828,6 @@ open class SpannedGridLayoutManager(
         }
 
         val correctedDistance = scrollBy(-delta, state, childEnd)
-
         val direction = if (delta > 0) Direction.END else Direction.START
 
         recycleChildrenOutOfBounds(direction, recycler)
@@ -706,13 +877,7 @@ open class SpannedGridLayoutManager(
         val smoothScroller = object: LinearSmoothScroller(recyclerView.context) {
 
             override fun computeScrollVectorForPosition(targetPosition: Int): PointF? {
-                if (childCount == 0) {
-                    return null
-                }
-
-                val direction = if (targetPosition < firstVisiblePosition) -1 else 1
-                return PointF(if (orientation == HORIZONTAL) direction.toFloat() else 0f,
-                    if (orientation == VERTICAL) direction.toFloat() else 0f)
+                return this@SpannedGridLayoutManager.computeScrollVectorForPosition(targetPosition)
             }
 
             override fun getVerticalSnapPreference(): Int {
@@ -726,6 +891,16 @@ open class SpannedGridLayoutManager(
 
         smoothScroller.targetPosition = position
         startSmoothScroll(smoothScroller)
+    }
+
+    fun computeScrollVectorForPosition(targetPosition: Int): PointF? {
+        if (childCount == 0) {
+            return null
+        }
+
+        val direction = if (targetPosition < firstVisiblePosition) -1 else 1
+        return PointF(if (orientation == HORIZONTAL) direction.toFloat() else 0f,
+            if (orientation == VERTICAL) direction.toFloat() else 0f)
     }
 
     /**
@@ -848,6 +1023,10 @@ open class SpannedGridLayoutManager(
 
     protected open fun getChildEnd(child: View): Int {
         return orientationHelper.getDecoratedEnd(child)
+    }
+
+    open fun getAdapterPosition(child: View): Int {
+        return (child.layoutParams as RecyclerView.LayoutParams).viewAdapterPosition
     }
 
     /**
