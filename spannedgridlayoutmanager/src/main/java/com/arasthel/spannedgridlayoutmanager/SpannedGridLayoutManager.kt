@@ -18,6 +18,10 @@ import androidx.recyclerview.widget.OrientationHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
 import androidx.recyclerview.widget.RecyclerView.VERTICAL
+import java.util.*
+import kotlin.Comparator
+import kotlin.math.ceil
+import kotlin.math.floor
 
 /**
  * A [RecyclerView.LayoutManager] which layouts and orders its views
@@ -27,8 +31,10 @@ import androidx.recyclerview.widget.RecyclerView.VERTICAL
  * @param orientation Whether the views will be laid out and scrolled vertically or horizontally.
  * @param _rowCount How many rows there should be. If your layout only cares about columns, set this to 1,
  * and set [customHeight].
- * @param _columnCount How many colums there should be. If your layout only cares about rows, set this to 1,
+ * @param _columnCount How many columns there should be. If your layout only cares about rows, set this to 1,
  * and set [customWidth].
+ *
+ * //TODO: the scroll indicators are currently disabled because they're unreliable.
  */
 open class SpannedGridLayoutManager(
     context: Context,
@@ -713,29 +719,33 @@ open class SpannedGridLayoutManager(
     }
 
     override fun computeVerticalScrollOffset(state: RecyclerView.State): Int {
+        return 0
 //        return computeScrollOffset()
-        return ScrollbarHelper.computeScrollOffset(
-            state,
-            orientationHelper,
-            firstVisibleItem,
-            lastVisibleItem,
-            this,
-            smoothScrollbarEnabled = true,
-            reverseLayout = false
-        )
+//        return rectsHelper.getPageIndexForItemPosition(lastVisiblePosition)
+//        return ScrollbarHelper.computeScrollOffset(
+//            state,
+//            orientationHelper,
+//            firstVisibleItem,
+//            lastVisibleItem,
+//            this,
+//            smoothScrollbarEnabled = true,
+//            reverseLayout = false
+//        )
     }
 
     override fun computeHorizontalScrollOffset(state: RecyclerView.State): Int {
+        return 0
 //        return computeScrollOffset()
-        return ScrollbarHelper.computeScrollOffset(
-            state,
-            orientationHelper,
-            firstVisibleItem,
-            lastVisibleItem,
-            this,
-            smoothScrollbarEnabled = true,
-            reverseLayout = false
-        )
+//        return rectsHelper.getPageIndexForItemPosition(lastVisiblePosition)
+//        return ScrollbarHelper.computeScrollOffset(
+//            state,
+//            orientationHelper,
+//            firstVisibleItem,
+//            lastVisibleItem,
+//            this,
+//            smoothScrollbarEnabled = true,
+//            reverseLayout = false
+//        )
     }
 
     private fun computeScrollOffset(): Int {
@@ -743,51 +753,55 @@ open class SpannedGridLayoutManager(
     }
 
     override fun computeVerticalScrollExtent(state: RecyclerView.State): Int {
-//        return 1
-        return ScrollbarHelper.computeScrollExtent(
-            state,
-            orientationHelper,
-            firstVisibleItem,
-            lastVisibleItem,
-            this,
-            true
-        )
+        return 0
+//        return ScrollbarHelper.computeScrollExtent(
+//            state,
+//            orientationHelper,
+//            firstVisibleItem,
+//            lastVisibleItem,
+//            this,
+//            true
+//        )
     }
 
     override fun computeHorizontalScrollExtent(state: RecyclerView.State): Int {
-//        return 1
-        return ScrollbarHelper.computeScrollExtent(
-            state,
-            orientationHelper,
-            firstVisibleItem,
-            lastVisibleItem,
-            this,
-            true
-        )
+        return 0
+//        return ScrollbarHelper.computeScrollExtent(
+//            state,
+//            orientationHelper,
+//            firstVisibleItem,
+//            lastVisibleItem,
+//            this,
+//            true
+//        )
     }
 
     override fun computeVerticalScrollRange(state: RecyclerView.State): Int {
+        return 0
 //        return state.itemCount - 1
-        return ScrollbarHelper.computeScrollRange(
-            state,
-            orientationHelper,
-            firstVisibleItem,
-            lastVisibleItem,
-            this,
-            true
-        )
+//        return rectsHelper.getPageCount()
+//        return ScrollbarHelper.computeScrollRange(
+//            state,
+//            orientationHelper,
+//            firstVisibleItem,
+//            lastVisibleItem,
+//            this,
+//            true
+//        )
     }
 
     override fun computeHorizontalScrollRange(state: RecyclerView.State): Int {
+        return 0
 //        return state.itemCount - 1
-        return ScrollbarHelper.computeScrollRange(
-            state,
-            orientationHelper,
-            firstVisibleItem,
-            lastVisibleItem,
-            this,
-            true
-        )
+//        return rectsHelper.getPageCount()
+//        return ScrollbarHelper.computeScrollRange(
+//            state,
+//            orientationHelper,
+//            firstVisibleItem,
+//            lastVisibleItem,
+//            this,
+//            true
+//        )
     }
 
     override fun canScrollVertically(): Boolean {
@@ -1247,6 +1261,42 @@ open class RectsHelper(val layoutManager: SpannedGridLayoutManager,
             Rect(0, 0, Int.MAX_VALUE, layoutManager.rowCount)
         }
         freeRects.add(initialFreeRect)
+    }
+
+    //TODO: this doesn't work
+    fun getPageCount(): Int {
+        val rowsOrColsPerPage = if (orientation == VERTICAL) {
+            layoutManager.rowCount
+        } else {
+            layoutManager.columnCount
+        }
+
+        return ceil(rows.size / rowsOrColsPerPage.toFloat()).toInt()
+    }
+
+    //TODO: this doesn't really work
+    fun getPageIndexForItemPosition(position: Int): Int {
+        val rowsOrColsPerPage = if (orientation == VERTICAL) {
+            layoutManager.rowCount
+        } else {
+            layoutManager.columnCount
+        }
+
+        return floor(getRowIndexForItemPosition(position) / rowsOrColsPerPage.toFloat()).toInt()
+    }
+
+    fun getRowIndexForItemPosition(position: Int): Int {
+        val sortedRows = TreeMap(rows)
+
+        synchronized(sortedRows) {
+            sortedRows.values.forEachIndexed { index, set ->
+                if (set.contains(position)) {
+                    return index
+                }
+            }
+        }
+
+        return 0
     }
 
     /**
