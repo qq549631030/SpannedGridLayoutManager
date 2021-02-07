@@ -1,12 +1,12 @@
 buildscript {
-    ext.kotlin_version = '1.4.20'
+    ext.kotlin_version = '1.4.21'
     ext.dokka_version = '0.9.18'
     repositories {
         jcenter()
         google()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.0.0-alpha01'
+        classpath 'com.android.tools.build:gradle:7.0.0-alpha05'
         classpath "org.jetbrains.dokka:dokka-android-gradle-plugin:$dokka_version"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
 
