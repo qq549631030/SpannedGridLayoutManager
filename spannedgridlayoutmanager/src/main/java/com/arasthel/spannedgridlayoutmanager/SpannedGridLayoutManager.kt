@@ -500,23 +500,22 @@ open class SpannedGridLayoutManager(
             debugLog("Elapsed time: $elapsed ms")
         }
 
+        // Fill from start to visible end
+        fillGap(Direction.END, recycler, state)
+        fillGap(Direction.START, recycler, state)
+
         // Restore scroll position based on first visible view
         val pendingScrollToPosition = pendingScrollToPosition
         if (itemCount != 0 && pendingScrollToPosition != null) {
             try {
-                val child = makeView(pendingScrollToPosition, Direction.END, recycler)
-                scroll = getPaddingStartForOrientation() + getChildStart(child)
+                val child = findViewByPosition(pendingScrollToPosition)
+                scroll = if (child != null) getPaddingStartForOrientation() + getChildStart(child) + scroll else 0
             } catch (e: IndexOutOfBoundsException) {
                 //pendingScrollPosition is not in dataset bounds
             }
 
             this.pendingScrollToPosition = null
         }
-
-        // Fill from start to visible end
-        fillGap(Direction.END, recycler, state)
-
-        recycleChildrenOutOfBounds(Direction.END, recycler)
 
         val (childEnd, _) = getGreatestChildEnd()
 
@@ -534,6 +533,9 @@ open class SpannedGridLayoutManager(
                 fillAfter(recycler)
             }
         }
+
+        recycleChildrenOutOfBounds(Direction.END, recycler)
+        recycleChildrenOutOfBounds(Direction.START, recycler)
     }
 
     /**
@@ -1020,6 +1022,7 @@ open class SpannedGridLayoutManager(
         if (orientation == VERTICAL) {
             bottom -= scroll - getPaddingStartForOrientation()
         }
+
         return bottom
     }
 
@@ -1058,13 +1061,8 @@ open class SpannedGridLayoutManager(
 
         for (i in childCount - 1 downTo 0) {
             val child = getChildAt(i) ?: continue
-            val end = Rect().apply { getDecoratedBoundsWithMargins(child, this) }.run {
-                if (orientation == VERTICAL) {
-                    bottom
-                } else {
-                    right
-                }
-            }
+
+            val end = orientationHelper.getDecoratedEnd(child)
 
             if (end > greatestEnd) {
                 greatestEnd = end
