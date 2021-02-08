@@ -508,7 +508,9 @@ open class SpannedGridLayoutManager(
         val pendingScrollToPosition = pendingScrollToPosition
         if (itemCount != 0 && pendingScrollToPosition != null) {
             try {
-                val start = rectsHelper.getStartForPosition(pendingScrollToPosition)
+                val (_, _, c) = getGreatestChildEnd()
+                val start = rectsHelper.getStartForPosition(if (c != null) getAdapterPosition(c) else 0)
+
                 scroll = start
             } catch (e: IndexOutOfBoundsException) {
                 //pendingScrollPosition is not in dataset bounds
@@ -517,21 +519,24 @@ open class SpannedGridLayoutManager(
             this.pendingScrollToPosition = null
         }
 
-        val (childEnd, _) = getGreatestChildEnd()
-        val isWithinEnd = childEnd <= rectsHelper.end
-
-        // Check if after changes in layout we aren't out of its bounds
-        val overScroll = if (!isWithinEnd) rectsHelper.end - childEnd else 0
-        if (overScroll != 0) {
-            // If we are, fix it
-            scrollBy(overScroll, state, childEnd)
-
-            if (overScroll > 0) {
-                fillBefore(recycler)
-            } else {
-                fillAfter(recycler)
-            }
-        }
+//        val (childEnd, _, c) = getGreatestChildEnd()
+//        val rectsEnd = rectsHelper.getEndForPosition(getAdapterPosition(c!!))
+//        val isWithinEnd = childEnd >= rectsEnd
+//
+//        Log.e("LockscreenWidgets", "isWithinEnd $isWithinEnd, childEnd $childEnd, end ${rectsEnd}")
+//
+//        // Check if after changes in layout we aren't out of its bounds
+//        val overScroll = if (!isWithinEnd) childEnd - rectsHelper.end else 0
+//        if (overScroll != 0) {
+//            // If we are, fix it
+//            scrollBy(overScroll, state, childEnd)
+//
+//            if (overScroll > 0) {
+//                fillBefore(recycler)
+//            } else {
+//                fillAfter(recycler)
+//            }
+//        }
 
         recycleChildrenOutOfBounds(Direction.END, recycler)
         recycleChildrenOutOfBounds(Direction.START, recycler)
@@ -827,7 +832,7 @@ open class SpannedGridLayoutManager(
             return 0
         }
 
-        val (childEnd, _) = getGreatestChildEnd()
+        val (childEnd, _, _) = getGreatestChildEnd()
 
         val canScrollBackwards = (firstVisiblePosition) >= 0 &&
                 0 < scroll &&
@@ -882,7 +887,8 @@ open class SpannedGridLayoutManager(
     override fun scrollToPosition(position: Int) {
         val wasNull = pendingScrollToPosition == null
 
-        pendingScrollToPosition = position
+        pendingScrollToPosition = position.coerceAtMost(itemCount - 1)
+            .coerceAtLeast(0)
 
         if (wasNull && recyclerView?.isInLayout == false) {
             requestLayout()
@@ -1058,12 +1064,13 @@ open class SpannedGridLayoutManager(
      * This method traverses the children from the last index to the first,
      * since greater indices are more likely to have the greatest end coordinate.
      */
-    protected open fun getGreatestChildEnd(): Pair<Int, Int> {
+    protected open fun getGreatestChildEnd(): Triple<Int, Int, View?> {
         var greatestEnd = 0
         var greatestI = 0
+        var child: View? = null
 
         for (i in childCount - 1 downTo 0) {
-            val child = getChildAt(i) ?: continue
+            child = getChildAt(i) ?: continue
 
             val end = orientationHelper.getDecoratedEnd(child)
 
@@ -1073,7 +1080,7 @@ open class SpannedGridLayoutManager(
             }
         }
 
-        return greatestEnd to greatestI
+        return Triple(greatestEnd, greatestI, child)
     }
 
     /**
@@ -1248,9 +1255,9 @@ open class RectsHelper(val layoutManager: SpannedGridLayoutManager,
      */
     val end: Int get() {
         return if (orientation == VERTICAL) {
-            (freeRects.last().top + 1) * layoutManager.itemHeight
+            (freeRects.last().bottom + 1) * layoutManager.itemHeight
         } else {
-            (freeRects.last().left + 1) * layoutManager.itemWidth
+            (freeRects.last().right + 1) * layoutManager.itemWidth
         }
     }
 
