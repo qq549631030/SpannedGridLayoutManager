@@ -489,7 +489,7 @@ open class SpannedGridLayoutManager(
 
         val start = System.currentTimeMillis()
 
-        for (i in 0 until state.itemCount) {
+        for (i in 0 until itemCount) {
             val spanSize = spanSizeLookup?.getSpanSize(i) ?: SpanSize(1, 1)
             val childRect = rectsHelper.findRect(i, spanSize)
             rectsHelper.pushRect(i, childRect)
@@ -508,8 +508,8 @@ open class SpannedGridLayoutManager(
         val pendingScrollToPosition = pendingScrollToPosition
         if (itemCount != 0 && pendingScrollToPosition != null) {
             try {
-                val child = findViewByPosition(pendingScrollToPosition)
-                scroll = if (child != null) getPaddingStartForOrientation() + getChildStart(child) + scroll else 0
+                val start = rectsHelper.getStartForPosition(pendingScrollToPosition)
+                scroll = start
             } catch (e: IndexOutOfBoundsException) {
                 //pendingScrollPosition is not in dataset bounds
             }
@@ -518,12 +518,11 @@ open class SpannedGridLayoutManager(
         }
 
         val (childEnd, _) = getGreatestChildEnd()
+        val isWithinEnd = childEnd <= rectsHelper.end
 
         // Check if after changes in layout we aren't out of its bounds
-        val overScroll = size - childEnd - getPaddingEndForOrientation()
-        val isLastItemInScreen = (0 until childCount).map { getPosition(getChildAt(it)!!) }.contains(itemCount - 1)
-        val allItemsInScreen = itemCount == 0 || (firstVisiblePosition == 0 && isLastItemInScreen)
-        if (!allItemsInScreen && overScroll > 0) {
+        val overScroll = if (!isWithinEnd) rectsHelper.end - childEnd else 0
+        if (overScroll != 0) {
             // If we are, fix it
             scrollBy(overScroll, state, childEnd)
 
@@ -881,9 +880,13 @@ open class SpannedGridLayoutManager(
     }
 
     override fun scrollToPosition(position: Int) {
+        val wasNull = pendingScrollToPosition == null
+
         pendingScrollToPosition = position
 
-        requestLayout()
+        if (wasNull && recyclerView?.isInLayout == false) {
+            requestLayout()
+        }
     }
 
     /**
@@ -1088,13 +1091,7 @@ open class SpannedGridLayoutManager(
 
         for (i in 0 until childCount) {
             val child = getChildAt(i) ?: continue
-            val start = Rect().apply { getDecoratedBoundsWithMargins(child, this) }.run {
-                if (orientation == VERTICAL) {
-                    top
-                } else {
-                    left
-                }
-            }
+            val start = orientationHelper.getDecoratedStart(child)
 
             if (start < leastStart) {
                 leastStart = start
@@ -1103,6 +1100,12 @@ open class SpannedGridLayoutManager(
         }
 
         return leastStart to leastI
+    }
+
+    protected fun getChildStartFromIndex(position: Int): Int {
+        val child = getChildAt(position) ?: return 0
+
+        return orientationHelper.getDecoratedStart(child)
     }
 
     protected open fun getSpanSizeForOrientationOfChild(index: Int): Int {
@@ -1295,6 +1298,22 @@ open class RectsHelper(val layoutManager: SpannedGridLayoutManager,
         }
 
         return 0
+    }
+
+    fun getEndForPosition(position: Int): Int {
+        return if (orientation == VERTICAL) {
+            (rectsCache[position]!!.bottom) * layoutManager.itemHeight
+        } else {
+            (rectsCache[position]!!.right) * layoutManager.itemWidth
+        }
+    }
+
+    fun getStartForPosition(position: Int): Int {
+        return if (orientation == VERTICAL) {
+            (rectsCache[position]!!.top) * layoutManager.itemHeight
+        } else {
+            (rectsCache[position]!!.left) * layoutManager.itemWidth
+        }
     }
 
     /**
