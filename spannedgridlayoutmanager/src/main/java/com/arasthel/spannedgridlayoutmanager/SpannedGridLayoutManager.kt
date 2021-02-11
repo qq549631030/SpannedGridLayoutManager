@@ -707,89 +707,45 @@ open class SpannedGridLayoutManager(
     }
 
     override fun computeVerticalScrollOffset(state: RecyclerView.State): Int {
-        return 0
-//        return computeScrollOffset()
-//        return rectsHelper.getPageIndexForItemPosition(lastVisiblePosition)
-//        return ScrollbarHelper.computeScrollOffset(
-//            state,
-//            orientationHelper,
-//            firstVisibleItem,
-//            lastVisibleItem,
-//            this,
-//            smoothScrollbarEnabled = true,
-//            reverseLayout = false
-//        )
+        return computeScrollOffset()
     }
 
     override fun computeHorizontalScrollOffset(state: RecyclerView.State): Int {
-        return 0
-//        return computeScrollOffset()
-//        return rectsHelper.getPageIndexForItemPosition(lastVisiblePosition)
-//        return ScrollbarHelper.computeScrollOffset(
-//            state,
-//            orientationHelper,
-//            firstVisibleItem,
-//            lastVisibleItem,
-//            this,
-//            smoothScrollbarEnabled = true,
-//            reverseLayout = false
-//        )
+        return computeScrollOffset()
     }
 
     private fun computeScrollOffset(): Int {
-        return if (childCount == 0) 0 else firstVisiblePosition
+        if (childCount == 0) return 0
+
+        return scroll
     }
 
     override fun computeVerticalScrollExtent(state: RecyclerView.State): Int {
-        return 0
-//        return ScrollbarHelper.computeScrollExtent(
-//            state,
-//            orientationHelper,
-//            firstVisibleItem,
-//            lastVisibleItem,
-//            this,
-//            true
-//        )
+        return computeScrollExtent()
     }
 
     override fun computeHorizontalScrollExtent(state: RecyclerView.State): Int {
-        return 0
-//        return ScrollbarHelper.computeScrollExtent(
-//            state,
-//            orientationHelper,
-//            firstVisibleItem,
-//            lastVisibleItem,
-//            this,
-//            true
-//        )
+        return computeScrollExtent()
+    }
+
+    private fun computeScrollExtent(): Int {
+        if (childCount == 0) return 0
+
+        return size
     }
 
     override fun computeVerticalScrollRange(state: RecyclerView.State): Int {
-        return 0
-//        return state.itemCount - 1
-//        return rectsHelper.getPageCount()
-//        return ScrollbarHelper.computeScrollRange(
-//            state,
-//            orientationHelper,
-//            firstVisibleItem,
-//            lastVisibleItem,
-//            this,
-//            true
-//        )
+        return computeScrollRange()
     }
 
     override fun computeHorizontalScrollRange(state: RecyclerView.State): Int {
-        return 0
-//        return state.itemCount - 1
-//        return rectsHelper.getPageCount()
-//        return ScrollbarHelper.computeScrollRange(
-//            state,
-//            orientationHelper,
-//            firstVisibleItem,
-//            lastVisibleItem,
-//            this,
-//            true
-//        )
+        return computeScrollRange()
+    }
+
+    private fun computeScrollRange(): Int {
+        if (childCount == 0) return 0
+
+        return rectsHelper.lastStart
     }
 
     override fun canScrollVertically(): Boolean {
@@ -1245,6 +1201,14 @@ open class RectsHelper(val layoutManager: SpannedGridLayoutManager,
         }
     }
 
+    val lastStart: Int get() {
+        return if (orientation == VERTICAL) {
+            (freeRects.last().top) * layoutManager.itemHeight
+        } else {
+            (freeRects.last().left) * layoutManager.itemWidth
+        }
+    }
+
     init {
         // There will always be a free rect that goes to Int.MAX_VALUE
         val initialFreeRect = if (orientation == VERTICAL) {
@@ -1253,28 +1217,6 @@ open class RectsHelper(val layoutManager: SpannedGridLayoutManager,
             Rect(0, 0, Int.MAX_VALUE, layoutManager.rowCount)
         }
         freeRects.add(initialFreeRect)
-    }
-
-    //TODO: this doesn't work
-    fun getPageCount(): Int {
-        val rowsOrColsPerPage = if (orientation == VERTICAL) {
-            layoutManager.rowCount
-        } else {
-            layoutManager.columnCount
-        }
-
-        return ceil(rows.size / rowsOrColsPerPage.toFloat()).toInt()
-    }
-
-    //TODO: this doesn't really work
-    fun getPageIndexForItemPosition(position: Int): Int {
-        val rowsOrColsPerPage = if (orientation == VERTICAL) {
-            layoutManager.rowCount
-        } else {
-            layoutManager.columnCount
-        }
-
-        return floor(getRowIndexForItemPosition(position) / rowsOrColsPerPage.toFloat()).toInt()
     }
 
     fun getRowIndexForItemPosition(position: Int): Int {
