@@ -20,8 +20,6 @@ import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
 import androidx.recyclerview.widget.RecyclerView.VERTICAL
 import java.util.*
 import kotlin.Comparator
-import kotlin.math.ceil
-import kotlin.math.floor
 
 /**
  * A [RecyclerView.LayoutManager] which layouts and orders its views
@@ -500,10 +498,6 @@ open class SpannedGridLayoutManager(
             debugLog("Elapsed time: $elapsed ms")
         }
 
-        // Fill from start to visible end
-        fillGap(Direction.END, recycler, state)
-        fillGap(Direction.START, recycler, state)
-
         // Restore scroll position based on first visible view
         val pendingScrollToPosition = pendingScrollToPosition
         if (itemCount != 0 && pendingScrollToPosition != null) {
@@ -519,6 +513,10 @@ open class SpannedGridLayoutManager(
 
             this.pendingScrollToPosition = null
         }
+
+        // Fill from start to visible end
+        fillGap(Direction.END, recycler, state)
+        fillGap(Direction.START, recycler, state)
 
         recycleChildrenOutOfBounds(Direction.END, recycler)
         recycleChildrenOutOfBounds(Direction.START, recycler)
@@ -1021,6 +1019,25 @@ open class SpannedGridLayoutManager(
         return Triple(greatestEnd, greatestI, child)
     }
 
+    protected open fun getGreatestChildStart(): Triple<Int, Int, View?> {
+        var greatestStart = 0
+        var greatestI = 0
+        var child: View? = null
+
+        for (i in childCount - 1 downTo 0) {
+            child = getChildAt(i) ?: continue
+
+            val start = orientationHelper.getDecoratedStart(child)
+
+            if (start > greatestStart) {
+                greatestStart = start
+                greatestI = i
+            }
+        }
+
+        return Triple(greatestStart, greatestI, child)
+    }
+
     /**
      * Get the smallest currently laid-out coordinate.
      * For vertical layouts, this will be the top of the top-most
@@ -1207,6 +1224,24 @@ open class RectsHelper(val layoutManager: SpannedGridLayoutManager,
         } else {
             (freeRects.last().left) * layoutManager.itemWidth
         }
+    }
+
+    val largestStart: Int get() {
+        var largest = 0
+
+        freeRects.forEach {
+            val s = if (orientation == VERTICAL) {
+                it.top + layoutManager.itemHeight
+            } else {
+                it.left * layoutManager.itemWidth
+            }
+
+            if (s > largest) {
+                largest = s
+            }
+        }
+
+        return largest
     }
 
     init {
