@@ -39,5 +39,5 @@ afterEvaluate {
 
 dependencies {
     implementation 'androidx.recyclerview:recyclerview:1.2.1'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 }
