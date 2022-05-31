@@ -503,10 +503,11 @@ open class SpannedGridLayoutManager(
         if (itemCount != 0 && pendingScrollToPosition != null) {
             try {
                 val s = rectsHelper.getStartForPosition(pendingScrollToPosition)
-//                val end = rectsHelper.getEndForPosition(pendingScrollToPosition)
+                val end = rectsHelper.getEndForPosition(pendingScrollToPosition)
 
-                scroll = s
-//                scroll = (size - end)
+                if (end > size) {
+                    scroll = s
+                }
             } catch (e: IndexOutOfBoundsException) {
                 //pendingScrollPosition is not in dataset bounds
             }
