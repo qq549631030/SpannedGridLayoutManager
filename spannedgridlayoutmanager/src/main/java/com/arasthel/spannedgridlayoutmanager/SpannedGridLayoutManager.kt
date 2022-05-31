@@ -19,7 +19,6 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
 import androidx.recyclerview.widget.RecyclerView.VERTICAL
 import java.util.*
-import kotlin.Comparator
 
 /**
  * A [RecyclerView.LayoutManager] which layouts and orders its views
@@ -151,6 +150,7 @@ open class SpannedGridLayoutManager(
      * really do that for us.
      */
     var scroll = 0
+        protected set
 
     /**
      * Delegate mapping items.
@@ -503,10 +503,10 @@ open class SpannedGridLayoutManager(
         if (itemCount != 0 && pendingScrollToPosition != null) {
             try {
                 val s = rectsHelper.getStartForPosition(pendingScrollToPosition)
-                val end = rectsHelper.getEndForPosition(pendingScrollToPosition)
+//                val end = rectsHelper.getEndForPosition(pendingScrollToPosition)
 
                 scroll = s
-                scroll -= (size - (end - scroll))
+//                scroll = (size - end)
             } catch (e: IndexOutOfBoundsException) {
                 //pendingScrollPosition is not in dataset bounds
             }
