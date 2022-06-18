@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
 import androidx.recyclerview.widget.RecyclerView.VERTICAL
 import java.util.*
+import kotlin.math.ceil
 
 /**
  * A [RecyclerView.LayoutManager] which layouts and orders its views
@@ -69,12 +70,12 @@ open class SpannedGridLayoutManager(
      * The width of each item. Normally this is the width of the RecyclerView, divided
      * by the number of columns in the layout, but you can set your own dimension with [customWidth].
      */
-    val itemWidth: Int get() = if (customWidth > 0) customWidth else (decoratedWidth / columnCount)
+    val itemWidth: Int get() = if (customWidth > 0) customWidth else ceil(decoratedWidth.toFloat() / columnCount.toFloat()).toInt()
     /**
      * The height of each item. Normally this is the height of the RecyclerView, divided
      * by the number of rows in the layout, but you can set your own dimension with [customHeight].
      */
-    val itemHeight: Int get() = if (customHeight > 0) customHeight else (decoratedHeight / rowCount)
+    val itemHeight: Int get() = if (customHeight > 0) customHeight else ceil(decoratedHeight.toFloat() / rowCount.toFloat()).toInt()
 
     /**
      * Delegate some orientation-specific logic.
