@@ -18,7 +18,7 @@ import androidx.recyclerview.widget.OrientationHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
 import androidx.recyclerview.widget.RecyclerView.VERTICAL
-import java.util.*
+import java.util.TreeMap
 import kotlin.math.ceil
 
 /**
@@ -505,8 +505,13 @@ open class SpannedGridLayoutManager(
             try {
                 val s = rectsHelper.getStartForPosition(pendingScrollToPosition)
                 val end = rectsHelper.getEndForPosition(pendingScrollToPosition)
+                val (greatestEnd, _, _) = getGreatestChildEnd()
 
-                if (end > size) {
+                if ((end - scroll) > size && (greatestEnd - end) > 0) {
+                    scroll = s - (greatestEnd - end).coerceAtLeast(0)
+                }
+
+                if (greatestEnd <= 0 && scroll > s) {
                     scroll = s
                 }
             } catch (e: IndexOutOfBoundsException) {
@@ -772,9 +777,9 @@ open class SpannedGridLayoutManager(
 
         val (childEnd, _, _) = getGreatestChildEnd()
 
-        val canScrollBackwards = (firstVisiblePosition) >= 0 &&
+        val canScrollBackwards = ((firstVisiblePosition) >= 0 &&
                 0 < scroll &&
-                delta < 0
+                delta < 0) || childEnd <= 0
 
         val canScrollForward = lastVisiblePosition <= state.itemCount &&
                 (size) < (childEnd) &&
@@ -812,7 +817,7 @@ open class SpannedGridLayoutManager(
         }
 
         // Correct scroll if it would make the layout scroll out of bounds at the end
-        if (distance < 0 && size - distance > childEnd) {
+        if (childEnd > 0 && distance < 0 && size - distance > childEnd) {
             correctedDistance = (size - childEnd)
             scroll += distance - correctedDistance
         }
@@ -990,7 +995,7 @@ open class SpannedGridLayoutManager(
     }
 
     open fun getAdapterPosition(child: View): Int {
-        return (child.layoutParams as RecyclerView.LayoutParams).viewAdapterPosition
+        return (child.layoutParams as RecyclerView.LayoutParams).bindingAdapterPosition
     }
 
     /**
@@ -1233,9 +1238,27 @@ open class RectsHelper(val layoutManager: SpannedGridLayoutManager,
 
         freeRects.forEach {
             val s = if (orientation == VERTICAL) {
-                it.top + layoutManager.itemHeight
+                it.top * layoutManager.itemHeight
             } else {
                 it.left * layoutManager.itemWidth
+            }
+
+            if (s > largest) {
+                largest = s
+            }
+        }
+
+        return largest
+    }
+
+    val largestEnd: Int get() {
+        var largest = 0
+
+        freeRects.forEach {
+            val s = if (orientation == VERTICAL) {
+                it.bottom * layoutManager.itemHeight
+            } else {
+                it.right * layoutManager.itemWidth
             }
 
             if (s > largest) {

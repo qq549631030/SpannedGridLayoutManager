@@ -9,11 +9,12 @@ ext {
 }
 
 android {
-    compileSdkVersion 31
+    compileSdkVersion 32
 
     defaultConfig {
+        namespace 'com.arasthel.spannedgridlayoutmanager'
         minSdkVersion 18
-        targetSdkVersion 31
+        targetSdkVersion 32
     }
     buildTypes {
         release {
