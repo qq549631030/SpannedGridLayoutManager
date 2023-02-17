@@ -532,7 +532,7 @@ open class SpannedGridLayoutManager(
     /**
      * Measure child view using [RectsHelper]
      */
-    protected open fun measureChild(position: Int, view: View) {
+    protected open fun measureChild(position: Int, view: View): Rect {
         val freeRectsHelper = this.rectsHelper
         val spanSize = spanSizeLookup?.getSpanSize(position) ?: SpanSize(1, 1)
         val usedSpan = if (orientation == HORIZONTAL) spanSize.height else spanSize.width
@@ -562,32 +562,33 @@ open class SpannedGridLayoutManager(
         view.layoutParams = layoutParams
         measureChildWithMargins(view, width, height)
 
+        val frame = Rect(left, top, right, bottom)
         // Cache rect
-        childFrames[position] = Rect(left, top, right, bottom)
+        childFrames[position] = frame
+
+        return frame
     }
 
     /**
      * Layout child once it's measured and its position cached
      */
     protected open fun layoutChild(position: Int, view: View) {
-        val frame = childFrames[position]
+        val frame = getChildFrameForPosition(position, view)
 
-        if (frame != null) {
-            val startPadding = getPaddingStartForOrientation()
+        val startPadding = getPaddingStartForOrientation()
 
-            if (orientation == VERTICAL) {
-                layoutDecorated(view,
-                        frame.left + paddingLeft,
-                        frame.top - scroll + startPadding,
-                        frame.right + paddingLeft,
-                        frame.bottom - scroll + startPadding)
-            } else {
-                layoutDecorated(view,
-                        frame.left - scroll + startPadding,
-                        frame.top + paddingTop,
-                        frame.right - scroll + startPadding,
-                        frame.bottom + paddingTop)
-            }
+        if (orientation == VERTICAL) {
+            layoutDecorated(view,
+                frame.left + paddingLeft,
+                frame.top - scroll + startPadding,
+                frame.right + paddingLeft,
+                frame.bottom - scroll + startPadding)
+        } else {
+            layoutDecorated(view,
+                frame.left - scroll + startPadding,
+                frame.top + paddingTop,
+                frame.right - scroll + startPadding,
+                frame.bottom + paddingTop)
         }
 
         // A new child was layouted, layout edges change
@@ -659,12 +660,14 @@ open class SpannedGridLayoutManager(
         val toDetach = mutableListOf<View>()
 
         for (i in 0 until childCount) {
-            val child = getChildAt(i)!!
-            val childEnd = getChildEnd(child)
+            getChildAt(i)?.let { child ->
+                val childEnd = getChildEnd(child)
 
-            if (childEnd < start) {
-                toDetach.add(child)
+                if (childEnd < start) {
+                    toDetach.add(child)
+                }
             }
+
         }
 
         for (child in toDetach) {
@@ -683,11 +686,12 @@ open class SpannedGridLayoutManager(
         val toDetach = mutableListOf<View>()
 
         for (i in (0 until childCount).reversed()) {
-            val child = getChildAt(i)!!
-            val childStart = getChildStart(child)
+            getChildAt(i)?.let { child ->
+                val childStart = getChildStart(child)
 
-            if (childStart > end) {
-                toDetach.add(child)
+                if (childStart > end) {
+                    toDetach.add(child)
+                }
             }
         }
 
@@ -922,18 +926,18 @@ open class SpannedGridLayoutManager(
 
     override fun getDecoratedMeasuredWidth(child: View): Int {
         val position = getPosition(child)
-        return childFrames[position]!!.width()
+        return getChildFrameForPosition(position, child).width()
     }
 
     override fun getDecoratedMeasuredHeight(child: View): Int {
         val position = getPosition(child)
-        return childFrames[position]!!.height()
+        return getChildFrameForPosition(position, child).height()
     }
 
     override fun getDecoratedTop(child: View): Int {
         val position = getPosition(child)
         val decoration = getTopDecorationHeight(child)
-        var top = childFrames[position]!!.top + decoration
+        var top = getChildFrameForPosition(position, child).top + decoration
 
         if (orientation == VERTICAL) {
             top -= scroll
@@ -945,7 +949,7 @@ open class SpannedGridLayoutManager(
     override fun getDecoratedRight(child: View): Int {
         val position = getPosition(child)
         val decoration = getLeftDecorationWidth(child) + getRightDecorationWidth(child)
-        var right = childFrames[position]!!.right + decoration
+        var right = getChildFrameForPosition(position, child).right + decoration
 
         if (orientation == HORIZONTAL) {
             right -= scroll - getPaddingStartForOrientation()
@@ -957,7 +961,7 @@ open class SpannedGridLayoutManager(
     override fun getDecoratedLeft(child: View): Int {
         val position = getPosition(child)
         val decoration = getLeftDecorationWidth(child)
-        var left = childFrames[position]!!.left + decoration
+        var left = getChildFrameForPosition(position, child).left + decoration
 
         if (orientation == HORIZONTAL) {
             left -= scroll
@@ -969,7 +973,7 @@ open class SpannedGridLayoutManager(
     override fun getDecoratedBottom(child: View): Int {
         val position = getPosition(child)
         val decoration = getTopDecorationHeight(child) + getBottomDecorationHeight(child)
-        var bottom = childFrames[position]!!.bottom + decoration
+        var bottom = getChildFrameForPosition(position, child).bottom + decoration
 
         if (orientation == VERTICAL) {
             bottom -= scroll - getPaddingStartForOrientation()
@@ -1100,6 +1104,10 @@ open class SpannedGridLayoutManager(
         } else {
             rowCount
         }
+    }
+
+    protected open fun getChildFrameForPosition(position: Int, view: View): Rect {
+        return childFrames[position] ?: measureChild(position, view)
     }
 
     //==============================================================================================
