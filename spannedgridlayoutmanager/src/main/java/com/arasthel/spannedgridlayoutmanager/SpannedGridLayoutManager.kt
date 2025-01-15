@@ -122,6 +122,7 @@ open class SpannedGridLayoutManager(
                         + rowCount)
             }
             spanSizeLookup?.invalidateCache()
+            rectsHelper.updateFreeRects()
             requestLayout()
         }
 
@@ -143,6 +144,7 @@ open class SpannedGridLayoutManager(
                         + columnCount)
             }
             spanSizeLookup?.invalidateCache()
+            rectsHelper.updateFreeRects()
             requestLayout()
         }
 
@@ -1278,6 +1280,12 @@ open class RectsHelper(val layoutManager: SpannedGridLayoutManager,
     }
 
     init {
+        updateFreeRects()
+    }
+
+    fun updateFreeRects() {
+        rectsCache.clear()
+        freeRects.clear()
         // There will always be a free rect that goes to Int.MAX_VALUE
         val initialFreeRect = if (orientation == VERTICAL) {
             Rect(0, 0, layoutManager.columnCount, Int.MAX_VALUE)
