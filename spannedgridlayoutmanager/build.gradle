@@ -13,7 +13,7 @@ android {
 
     defaultConfig {
         namespace 'com.arasthel.spannedgridlayoutmanager'
-        minSdkVersion 18
+        minSdkVersion 21
         targetSdkVersion 34
     }
     buildTypes {
