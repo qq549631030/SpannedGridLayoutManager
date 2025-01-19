@@ -122,7 +122,6 @@ open class SpannedGridLayoutManager(
                         + rowCount)
             }
             spanSizeLookup?.invalidateCache()
-            rectsHelper.updateFreeRects()
             requestLayout()
         }
 
@@ -144,7 +143,6 @@ open class SpannedGridLayoutManager(
                         + columnCount)
             }
             spanSizeLookup?.invalidateCache()
-            rectsHelper.updateFreeRects()
             requestLayout()
         }
 
