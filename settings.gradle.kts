@@ -14,4 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-include(":sample", ":spannedgridlayoutmanager")
+include(":spannedgridlayoutmanager", ":sample")
+rootProject.name = "SpannedGridLayoutManager"

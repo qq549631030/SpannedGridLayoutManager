@@ -10,15 +10,9 @@ android {
         namespace = "com.arasthel.spannedgridlayoutmanager.sample"
         applicationId = "com.arasthel.spannedgridlayoutmanager.sample"
         minSdk = 21
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
-    }
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
-        }
     }
 
     compileOptions {
@@ -29,13 +23,19 @@ android {
     kotlinOptions {
         jvmTarget = "21"
     }
+
+    packaging {
+        resources.excludes.add("META-INF/library_release.kotlin_module")
+    }
 }
 
 dependencies {
+    implementation(fileTree("libs") { include("*.jar") })
+
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.recyclerview)
-    implementation(libs.kotlin.stdlib.jdk8)
+    implementation(libs.kotlin.stdlib)
 
     implementation(project(":spannedgridlayoutmanager"))
 }

@@ -1,5 +1,5 @@
 plugins {
-    alias(libs.plugins.android.application)
+    alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     id("maven-publish")
 }
@@ -10,13 +10,7 @@ android {
     defaultConfig {
         namespace = "com.arasthel.spannedgridlayoutmanager"
         minSdk = 21
-        targetSdk = 34
-    }
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
-        }
+        targetSdk = 35
     }
 
     compileOptions {
@@ -42,6 +36,8 @@ afterEvaluate {
 }
 
 dependencies {
+    implementation(fileTree("libs") { include("*.jar") })
+
     implementation(libs.androidx.recyclerview)
-    implementation(libs.kotlin.stdlib.jdk8)
+    implementation(libs.kotlin.stdlib)
 }
