@@ -10,7 +10,7 @@ android {
     defaultConfig {
         namespace = "com.arasthel.spannedgridlayoutmanager"
         minSdk = 21
-        targetSdk = 35
+        lint.targetSdk = 35
     }
 
     compileOptions {
@@ -27,6 +27,8 @@ afterEvaluate {
     publishing {
         publications {
             create<MavenPublication>("release") {
+                from(components.getByName("release"))
+
                 groupId = "tk.zwander.spannedgridlayoutmanager"
                 artifactId = "final"
                 version = "1.0"
